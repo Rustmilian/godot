@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="RichTextLabel" inherits="Control" version="4.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+<class name="RichTextLabel" inherits="Control" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
 	<brief_description>
-		Label that displays rich text.
+		A control for displaying text that can contain different font styles, images, and basic formatting.
 	</brief_description>
 	<description>
-		Rich text can contain custom text, fonts, images and some basic formatting. The label manages these as an internal tag stack. It also adapts itself to given width/heights.
+		A control for displaying text that can contain custom fonts, images, and basic formatting. [RichTextLabel] manages these as an internal tag stack. It also adapts itself to given width/heights.
 		[b]Note:[/b] Assignments to [member text] clear the tag stack and reconstruct it from the property's contents. Any edits made to [member text] will erase previous edits made from other manual sources such as [method append_text] and the [code]push_*[/code] / [method pop] methods.
 		[b]Note:[/b] RichTextLabel doesn't support entangled BBCode tags. For example, instead of using [code][b]bold[i]bold italic[/b]italic[/i][/code], use [code][b]bold[i]bold italic[/i][/b][i]italic[/i][/code].
-		[b]Note:[/b] [code]push_*/pop[/code] functions won't affect BBCode.
-		[b]Note:[/b] Unlike [Label], RichTextLabel doesn't have a [i]property[/i] to horizontally align text to the center. Instead, enable [member bbcode_enabled] and surround the text in a [code][center][/code] tag as follows: [code][center]Example[/center][/code]. There is currently no built-in way to vertically align text either, but this can be emulated by relying on anchors/containers and the [member fit_content] property.
+		[b]Note:[/b] [code]push_*/pop_*[/code] functions won't affect BBCode.
+		[b]Note:[/b] Unlike [Label], [RichTextLabel] doesn't have a [i]property[/i] to horizontally align text to the center. Instead, enable [member bbcode_enabled] and surround the text in a [code][center][/code] tag as follows: [code][center]Example[/center][/code]. There is currently no built-in way to vertically align text either, but this can be emulated by relying on anchors/containers and the [member fit_content] property.
 	</description>
 	<tutorials>
 		<link title="BBCode in RichTextLabel">$DOCS_URL/tutorials/ui/bbcode_in_richtextlabel.html</link>
@@ -24,10 +24,17 @@
 			<param index="3" name="color" type="Color" default="Color(1, 1, 1, 1)" />
 			<param index="4" name="inline_align" type="int" enum="InlineAlignment" default="5" />
 			<param index="5" name="region" type="Rect2" default="Rect2(0, 0, 0, 0)" />
+			<param index="6" name="key" type="Variant" default="null" />
+			<param index="7" name="pad" type="bool" default="false" />
+			<param index="8" name="tooltip" type="String" default="&quot;&quot;" />
+			<param index="9" name="size_in_percent" type="bool" default="false" />
 			<description>
 				Adds an image's opening and closing tags to the tag stack, optionally providing a [param width] and [param height] to resize the image, a [param color] to tint the image and a [param region] to only use parts of the image.
 				If [param width] or [param height] is set to 0, the image size will be adjusted in order to keep the original aspect ratio.
 				If [param width] and [param height] are not set, but [param region] is, the region's rect will be used.
+				[param key] is an optional identifier, that can be used to modify the image via [method update_image].
+				If [param pad] is set, and the image is smaller than the size specified by [param width] and [param height], the image padding is added to match the size instead of upscaling.
+				If [param size_in_percent] is set, [param width] and [param height] values are percentages of the control width instead of pixels.
 			</description>
 		</method>
 		<method name="add_text">
@@ -48,7 +55,8 @@
 		<method name="clear">
 			<return type="void" />
 			<description>
-				Clears the tag stack and sets [member text] to an empty string.
+				Clears the tag stack.
+				[b]Note:[/b] This method will not modify [member text], but setting [member text] to an empty string also clears the stack.
 			</description>
 		</method>
 		<method name="deselect">
@@ -265,6 +273,18 @@
 				Terminates the current tag. Use after [code]push_*[/code] methods to close BBCodes manually. Does not need to follow [code]add_*[/code] methods.
 			</description>
 		</method>
+		<method name="pop_all">
+			<return type="void" />
+			<description>
+				Terminates all tags opened by [code]push_*[/code] methods.
+			</description>
+		</method>
+		<method name="pop_context">
+			<return type="void" />
+			<description>
+				Terminates tags opened after the last [method push_context] call (including context marker), or all tags if there's no context marker on the stack.
+			</description>
+		</method>
 		<method name="push_bgcolor">
 			<return type="void" />
 			<param index="0" name="bgcolor" type="Color" />
@@ -295,6 +315,12 @@
 			<param index="0" name="color" type="Color" />
 			<description>
 				Adds a [code][color][/code] tag to the tag stack.
+			</description>
+		</method>
+		<method name="push_context">
+			<return type="void" />
+			<description>
+				Adds a context marker to the tag stack. See [method pop_context].
 			</description>
 		</method>
 		<method name="push_customfx">
@@ -328,9 +354,10 @@
 		<method name="push_font">
 			<return type="void" />
 			<param index="0" name="font" type="Font" />
-			<param index="1" name="font_size" type="int" />
+			<param index="1" name="font_size" type="int" default="0" />
 			<description>
 				Adds a [code][font][/code] tag to the tag stack. Overrides default fonts for its duration.
+				Passing [code]0[/code] to [param font_size] will use the existing default font size.
 			</description>
 		</method>
 		<method name="push_font_size">
@@ -357,7 +384,14 @@
 		<method name="push_italics">
 			<return type="void" />
 			<description>
-				Adds a [code][font][/code] tag with a italics font to the tag stack. This is the same as adding a [code][i][/code] tag if not currently in a [code][b][/code] tag.
+				Adds a [code][font][/code] tag with an italics font to the tag stack. This is the same as adding an [code][i][/code] tag if not currently in a [code][b][/code] tag.
+			</description>
+		</method>
+		<method name="push_language">
+			<return type="void" />
+			<param index="0" name="language" type="String" />
+			<description>
+				Adds language code used for text shaping algorithm and Open-Type font features.
 			</description>
 		</method>
 		<method name="push_list">
@@ -409,6 +443,8 @@
 			<param index="1" name="base_direction" type="int" enum="Control.TextDirection" default="0" />
 			<param index="2" name="language" type="String" default="&quot;&quot;" />
 			<param index="3" name="st_parser" type="int" enum="TextServer.StructuredTextParser" default="0" />
+			<param index="4" name="justification_flags" type="int" enum="TextServer.JustificationFlag" is_bitfield="true" default="163" />
+			<param index="5" name="tab_stops" type="PackedFloat32Array" default="PackedFloat32Array()" />
 			<description>
 				Adds a [code][p][/code] tag to the tag stack.
 			</description>
@@ -503,11 +539,28 @@
 			<return type="void" />
 			<param index="0" name="column" type="int" />
 			<param index="1" name="expand" type="bool" />
-			<param index="2" name="ratio" type="int" />
+			<param index="2" name="ratio" type="int" default="1" />
 			<description>
 				Edits the selected column's expansion options. If [param expand] is [code]true[/code], the column expands in proportion to its expansion ratio versus the other columns' ratios.
 				For example, 2 columns with ratios 3 and 4 plus 70 pixels in available width would expand 30 and 40 pixels, respectively.
 				If [param expand] is [code]false[/code], the column will not contribute to the total ratio.
+			</description>
+		</method>
+		<method name="update_image">
+			<return type="void" />
+			<param index="0" name="key" type="Variant" />
+			<param index="1" name="mask" type="int" enum="RichTextLabel.ImageUpdateMask" is_bitfield="true" />
+			<param index="2" name="image" type="Texture2D" />
+			<param index="3" name="width" type="int" default="0" />
+			<param index="4" name="height" type="int" default="0" />
+			<param index="5" name="color" type="Color" default="Color(1, 1, 1, 1)" />
+			<param index="6" name="inline_align" type="int" enum="InlineAlignment" default="5" />
+			<param index="7" name="region" type="Rect2" default="Rect2(0, 0, 0, 0)" />
+			<param index="8" name="pad" type="bool" default="false" />
+			<param index="9" name="tooltip" type="String" default="&quot;&quot;" />
+			<param index="10" name="size_in_percent" type="bool" default="false" />
+			<description>
+				Updates the existing images with the key [param key]. Only properties specified by [param mask] bits are updated. See [method add_image].
 			</description>
 		</method>
 	</methods>
@@ -528,6 +581,9 @@
 		</member>
 		<member name="deselect_on_focus_loss_enabled" type="bool" setter="set_deselect_on_focus_loss_enabled" getter="is_deselect_on_focus_loss_enabled" default="true">
 			If [code]true[/code], the selected text will be deselected when focus is lost.
+		</member>
+		<member name="drag_and_drop_selection_enabled" type="bool" setter="set_drag_and_drop_selection_enabled" getter="is_drag_and_drop_selection_enabled" default="true">
+			If [code]true[/code], allow drag and drop of selected text.
 		</member>
 		<member name="fit_content" type="bool" setter="set_fit_content" getter="is_fit_content_enabled" default="false">
 			If [code]true[/code], the label's minimum size will be automatically updated to fit its content, matching the behavior of [Label].
@@ -634,6 +690,30 @@
 		</constant>
 		<constant name="MENU_MAX" value="2" enum="MenuItems">
 			Represents the size of the [enum MenuItems] enum.
+		</constant>
+		<constant name="UPDATE_TEXTURE" value="1" enum="ImageUpdateMask" is_bitfield="true">
+			If this bit is set, [method update_image] changes image texture.
+		</constant>
+		<constant name="UPDATE_SIZE" value="2" enum="ImageUpdateMask" is_bitfield="true">
+			If this bit is set, [method update_image] changes image size.
+		</constant>
+		<constant name="UPDATE_COLOR" value="4" enum="ImageUpdateMask" is_bitfield="true">
+			If this bit is set, [method update_image] changes image color.
+		</constant>
+		<constant name="UPDATE_ALIGNMENT" value="8" enum="ImageUpdateMask" is_bitfield="true">
+			If this bit is set, [method update_image] changes image inline alignment.
+		</constant>
+		<constant name="UPDATE_REGION" value="16" enum="ImageUpdateMask" is_bitfield="true">
+			If this bit is set, [method update_image] changes image texture region.
+		</constant>
+		<constant name="UPDATE_PAD" value="32" enum="ImageUpdateMask" is_bitfield="true">
+			If this bit is set, [method update_image] changes image padding.
+		</constant>
+		<constant name="UPDATE_TOOLTIP" value="64" enum="ImageUpdateMask" is_bitfield="true">
+			If this bit is set, [method update_image] changes image tooltip.
+		</constant>
+		<constant name="UPDATE_WIDTH_IN_PERCENT" value="128" enum="ImageUpdateMask" is_bitfield="true">
+			If this bit is set, [method update_image] changes image width from/to percents.
 		</constant>
 	</constants>
 	<theme_items>

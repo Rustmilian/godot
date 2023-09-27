@@ -85,6 +85,11 @@ Copyright: 2001, Robert Penner
  2007-2014, Juan Linietsky, Ariel Manzur
 License: Expat
 
+Files: ./servers/physics_2d/godot_joints_2d.cpp
+Comment: Chipmunk2D Joint Constraints
+Copyright: 2007, Scott Lembcke
+License: Expat
+
 Files: ./servers/physics_3d/collision_solver_3d_sat.cpp
 Comment: Open Dynamics Engine
 Copyright: 2001-2003, Russell L. Smith, Alen Ladavac, Nguyen Binh
@@ -141,6 +146,16 @@ Comment: AMD FidelityFX Super Resolution
 Copyright: 2021, Advanced Micro Devices, Inc.
 License: Expat
 
+Files: ./thirdparty/amd-fsr2/
+Comment: AMD FidelityFX Super Resolution 2
+Copyright: 2022-2023, Advanced Micro Devices, Inc.
+License: Expat
+
+Files: ./thirdparty/angle/
+Comment: ANGLE
+Copyright: 2018, The ANGLE Project Authors.
+License: BSD-3-clause
+
 Files: ./thirdparty/astcenc/
 Comment: Arm ASTC Encoder
 Copyright: 2011-2023, Arm Limited
@@ -161,6 +176,11 @@ Comment: CA certificates
 Copyright: Mozilla Contributors
 License: MPL-2.0
 
+Files: ./thirdparty/clipper2/
+Comment: Clipper2
+Copyright: 2010-2013, Angus Johnson
+License: BSL-1.0
+
 Files: ./thirdparty/cvtt/
 Comment: Convection Texture Tools Stand-Alone Kernels
 Copyright: 2018, Eric Lasota
@@ -169,7 +189,7 @@ License: Expat
 
 Files: ./thirdparty/doctest/
 Comment: doctest
-Copyright: 2016-2021, Viktor Kirilov
+Copyright: 2016-2023, Viktor Kirilov
 License: Expat
 
 Files: ./thirdparty/embree/
@@ -204,7 +224,7 @@ License: OFL-1.1
 
 Files: ./thirdparty/freetype/
 Comment: The FreeType Project
-Copyright: 1996-2022, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright: 1996-2023, David Turner, Robert Wilhelm, and Werner Lemberg.
 License: FTL
 
 Files: ./thirdparty/glad/
@@ -256,6 +276,12 @@ Comment: jpeg-compressor
 Copyright: 2012, Rich Geldreich
 License: public-domain or Apache-2.0
 
+Files: ./thirdparty/libktx/
+Comment: KTX
+Copyright: 2013-2020, Mark Callow
+ 2010-2020 The Khronos Group, Inc.
+License: Apache-2.0
+
 Files: ./thirdparty/libogg/
 Comment: OggVorbis
 Copyright: 2002, Xiph.org Foundation
@@ -302,7 +328,7 @@ License: CC0-1.0
 
 Files: ./thirdparty/miniupnpc/
 Comment: MiniUPnP Project
-Copyright: 2005-2022, Thomas Bernard
+Copyright: 2005-2023, Thomas Bernard
 License: BSD-3-clause
 
 Files: ./thirdparty/minizip/
@@ -394,8 +420,13 @@ License: BSD-2-clause
 
 Files: ./thirdparty/msdfgen/
 Comment: Multi-channel signed distance field generator
-Copyright: 2016, Viktor Chlumsky
+Copyright: 2016-2022, Viktor Chlumsky
 License: MIT
+
+Files: ./thirdparty/nvapi/nvapi_minimal.h
+Comment: Stripped down version of "nvapi.h" from the NVIDIA NVAPI SDK
+Copyright: 2019-2022, NVIDIA Corporation
+License: Expat
 
 Files: ./thirdparty/oidn/
 Comment: Intel Open Image Denoise
@@ -404,7 +435,7 @@ License: Apache-2.0
 
 Files: ./thirdparty/openxr/
 Comment: OpenXR Loader
-Copyright: 2020-2022, The Khronos Group Inc.
+Copyright: 2020-2023, The Khronos Group Inc.
 License: Apache-2.0
 
 Files: ./thirdparty/pcre2/
@@ -425,7 +456,7 @@ License: Apache-2.0
 
 Files: ./thirdparty/spirv-reflect/
 Comment: SPIRV-Reflect
-Copyright: 2017-2018, Google Inc.
+Copyright: 2017-2022, Google Inc.
 License: Apache-2.0
 
 Files: ./thirdparty/squish/
@@ -452,15 +483,15 @@ License: BSD-3-clause
 
 Files: ./thirdparty/volk/
 Comment: volk
-Copyright: 2018-2019, Arseny Kapoulkine
+Copyright: 2018-2023, Arseny Kapoulkine
 License: Expat
 
 Files: ./thirdparty/vulkan/
 Comment: Vulkan Headers
-Copyright: 2014-2021, The Khronos Group Inc.
-  2014-2021, Valve Corporation
-  2014-2021, LunarG, Inc.
-  2015-2021, Google Inc.
+Copyright: 2014-2023, The Khronos Group Inc.
+  2014-2023, Valve Corporation
+  2014-2023, LunarG, Inc.
+  2015-2023, Google Inc.
 License: Apache-2.0
 
 Files: ./thirdparty/vulkan/vk_mem_alloc.h
@@ -482,12 +513,12 @@ License: Expat
 
 Files: ./thirdparty/zlib/
 Comment: zlib
-Copyright: 1995-2022, Jean-loup Gailly and Mark Adler
+Copyright: 1995-2023, Jean-loup Gailly and Mark Adler
 License: Zlib
 
 Files: ./thirdparty/zstd/
 Comment: Zstandard
-Copyright: 2016-2021, Facebook, Inc.
+Copyright: Meta Platforms, Inc. and affiliates.
 License: BSD-3-clause
 
 

@@ -31,24 +31,51 @@
 #ifndef FILESYSTEM_DOCK_H
 #define FILESYSTEM_DOCK_H
 
-#include "editor/create_dialog.h"
 #include "editor/dependency_editor.h"
-#include "editor/editor_dir_dialog.h"
 #include "editor/editor_file_system.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/script_create_dialog.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/control.h"
 #include "scene/gui/dialogs.h"
-#include "scene/gui/item_list.h"
-#include "scene/gui/line_edit.h"
 #include "scene/gui/menu_button.h"
-#include "scene/gui/progress_bar.h"
 #include "scene/gui/split_container.h"
 #include "scene/gui/tree.h"
 
+class CreateDialog;
+class EditorDirDialog;
+class ItemList;
+class LineEdit;
+class ProgressBar;
 class SceneCreateDialog;
 class ShaderCreateDialog;
+class DirectoryCreateDialog;
+class EditorResourceTooltipPlugin;
+
+class FileSystemTree : public Tree {
+	virtual Control *make_custom_tooltip(const String &p_text) const;
+};
+
+class FileSystemList : public ItemList {
+	GDCLASS(FileSystemList, ItemList);
+
+	VBoxContainer *popup_editor_vb = nullptr;
+	Popup *popup_editor = nullptr;
+	LineEdit *line_editor = nullptr;
+
+	virtual Control *make_custom_tooltip(const String &p_text) const override;
+	void _line_editor_submit(String p_text);
+	void _text_editor_popup_modal_close();
+
+protected:
+	static void _bind_methods();
+
+public:
+	bool edit_selected();
+	String get_edit_text();
+
+	FileSystemList();
+};
 
 class FileSystemDock : public VBoxContainer {
 	GDCLASS(FileSystemDock, VBoxContainer);
@@ -110,6 +137,9 @@ private:
 		OVERWRITE_RENAME,
 	};
 
+	HashMap<String, Color> folder_colors;
+	Dictionary assigned_folder_colors;
+
 	FileSortOption file_sort = FILE_SORT_NAME;
 
 	VBoxContainer *scanning_vb = nullptr;
@@ -124,7 +154,7 @@ private:
 	Button *button_file_list_display_mode = nullptr;
 	Button *button_hist_next = nullptr;
 	Button *button_hist_prev = nullptr;
-	LineEdit *current_path = nullptr;
+	LineEdit *current_path_line_edit = nullptr;
 
 	HBoxContainer *toolbar2_hbc = nullptr;
 	LineEdit *tree_search_box = nullptr;
@@ -151,19 +181,24 @@ private:
 	DependencyRemoveDialog *remove_dialog = nullptr;
 
 	EditorDirDialog *move_dialog = nullptr;
-	ConfirmationDialog *rename_dialog = nullptr;
-	LineEdit *rename_dialog_text = nullptr;
 	ConfirmationDialog *duplicate_dialog = nullptr;
 	LineEdit *duplicate_dialog_text = nullptr;
-	ConfirmationDialog *make_dir_dialog = nullptr;
-	LineEdit *make_dir_dialog_text = nullptr;
+	DirectoryCreateDialog *make_dir_dialog = nullptr;
+
 	ConfirmationDialog *overwrite_dialog = nullptr;
+	ScrollContainer *overwrite_dialog_scroll = nullptr;
+	Label *overwrite_dialog_header = nullptr;
+	Label *overwrite_dialog_footer = nullptr;
+	Label *overwrite_dialog_file_list = nullptr;
+
 	SceneCreateDialog *make_scene_dialog = nullptr;
 	ScriptCreateDialog *make_script_dialog = nullptr;
 	ShaderCreateDialog *make_shader_dialog = nullptr;
 	CreateDialog *new_resource_dialog = nullptr;
 
 	bool always_show_folders = false;
+
+	bool editor_is_dark_theme = false;
 
 	class FileOrFolder {
 	public:
@@ -185,26 +220,27 @@ private:
 	int history_pos;
 	int history_max_size;
 
-	String path;
+	String current_path;
 
 	bool initialized = false;
 
 	bool updating_tree = false;
 	int tree_update_id;
-	Tree *tree = nullptr;
-	ItemList *files = nullptr;
+	FileSystemTree *tree = nullptr;
+	FileSystemList *files = nullptr;
 	bool import_dock_needs_update = false;
 
 	bool holding_branch = false;
 	Vector<TreeItem *> tree_items_selected_on_drag_begin;
 	PackedInt32Array list_items_selected_on_drag_begin;
 
+	LocalVector<Ref<EditorResourceTooltipPlugin>> tooltip_plugins;
+
 	void _tree_mouse_exited();
 	void _reselect_items_selected_on_drag_begin(bool reset = false);
 
 	Ref<Texture2D> _get_tree_item_icon(bool p_is_valid, String p_file_type);
 	bool _create_tree(TreeItem *p_parent, EditorFileSystemDirectory *p_dir, Vector<String> &uncollapsed_paths, bool p_select_in_favorites, bool p_unfold_path = false);
-	Vector<String> _compute_uncollapsed_paths();
 	void _update_tree(const Vector<String> &p_uncollapsed_paths = Vector<String>(), bool p_uncollapse_root = false, bool p_select_in_favorites = false, bool p_unfold_path = false);
 	void _navigate_to_path(const String &p_path, bool p_select_in_favorites = false);
 
@@ -226,22 +262,23 @@ private:
 	void _update_import_dock();
 
 	void _get_all_items_in_dir(EditorFileSystemDirectory *p_efsd, Vector<String> &r_files, Vector<String> &r_folders) const;
-	void _find_remaps(EditorFileSystemDirectory *p_efsd, const HashMap<String, String> &r_renames, Vector<String> &r_to_remaps) const;
+	void _find_remaps(EditorFileSystemDirectory *p_efsd, const Vector<String> &r_renames, Vector<String> &r_to_remaps) const;
 	void _try_move_item(const FileOrFolder &p_item, const String &p_new_path, HashMap<String, String> &p_file_renames, HashMap<String, String> &p_folder_renames);
 	void _try_duplicate_item(const FileOrFolder &p_item, const String &p_new_path) const;
-	void _update_dependencies_after_move(const HashMap<String, String> &p_renames) const;
-	void _update_resource_paths_after_move(const HashMap<String, String> &p_renames) const;
-	void _save_scenes_after_move(const HashMap<String, String> &p_renames) const;
+	void _before_move(Vector<String> &r_old_paths, HashMap<String, ResourceUID::ID> &r_uids, Vector<String> &r_remaps) const;
+	void _update_dependencies_after_move(const HashMap<String, String> &p_renames, const Vector<String> &p_remaps) const;
+	void _update_resource_paths_after_move(const HashMap<String, String> &p_renames, const HashMap<String, ResourceUID::ID> &p_uids) const;
 	void _update_favorites_list_after_move(const HashMap<String, String> &p_files_renames, const HashMap<String, String> &p_folders_renames) const;
-	void _update_project_settings_after_move(const HashMap<String, String> &p_renames) const;
+	void _update_project_settings_after_move(const HashMap<String, String> &p_renames, const HashMap<String, String> &p_folders_renames);
 	String _get_unique_name(const FileOrFolder &p_entry, const String &p_at_path);
+
+	void _update_folder_colors_setting();
 
 	void _resource_removed(const Ref<Resource> &p_resource);
 	void _file_removed(String p_file);
 	void _folder_removed(String p_folder);
 
 	void _resource_created();
-	void _make_dir_confirm();
 	void _make_scene_confirm();
 	void _rename_operation_confirm();
 	void _duplicate_operation_confirm();
@@ -269,6 +306,7 @@ private:
 	MenuButton *_create_file_menu_button();
 	void _file_sort_popup(int p_id);
 
+	void _folder_color_index_pressed(int p_index, PopupMenu *p_menu);
 	void _file_and_folders_fill_popup(PopupMenu *p_popup, Vector<String> p_paths, bool p_display_path_dependent_options = true);
 	void _tree_rmb_select(const Vector2 &p_pos, MouseButton p_button);
 	void _file_list_item_clicked(int p_item, const Vector2 &p_pos, MouseButton p_mouse_button_index);
@@ -296,7 +334,7 @@ private:
 
 	void _search(EditorFileSystemDirectory *p_path, List<FileInfo> *matches, int p_max_items);
 
-	void _set_current_path_text(const String &p_path);
+	void _set_current_path_line_edit_text(const String &p_path);
 
 	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
 	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
@@ -328,6 +366,7 @@ protected:
 
 public:
 	Vector<String> get_selected_paths() const;
+	Vector<String> get_uncollapsed_paths() const;
 
 	String get_current_path() const;
 	String get_current_directory() const;
@@ -351,6 +390,12 @@ public:
 
 	void set_file_list_display_mode(FileListDisplayMode p_mode);
 	FileListDisplayMode get_file_list_display_mode() { return file_list_display_mode; };
+
+	Tree *get_tree_control() { return tree; }
+
+	void add_resource_tooltip_plugin(const Ref<EditorResourceTooltipPlugin> &p_plugin);
+	void remove_resource_tooltip_plugin(const Ref<EditorResourceTooltipPlugin> &p_plugin);
+	Control *create_tooltip_for_path(const String &p_path) const;
 
 	FileSystemDock();
 	~FileSystemDock();

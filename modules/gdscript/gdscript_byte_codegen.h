@@ -32,7 +32,6 @@
 #define GDSCRIPT_BYTE_CODEGEN_H
 
 #include "gdscript_codegen.h"
-
 #include "gdscript_function.h"
 #include "gdscript_utility_functions.h"
 
@@ -88,6 +87,7 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	Vector<StackSlot> locals;
 	Vector<StackSlot> temporaries;
 	List<int> used_temporaries;
+	List<int> temporaries_pending_clear;
 	RBMap<Variant::Type, List<int>> temporaries_pool;
 
 	List<GDScriptFunction::StackDebug> stack_debug;
@@ -143,7 +143,6 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	// Lists since these can be nested.
 	List<int> if_jmp_addrs;
 	List<int> for_jmp_addrs;
-	List<Address> for_iterator_variables;
 	List<Address> for_counter_variables;
 	List<Address> for_container_variables;
 	List<int> while_jmp_addrs;
@@ -463,6 +462,7 @@ public:
 	virtual uint32_t add_or_get_name(const StringName &p_name) override;
 	virtual uint32_t add_temporary(const GDScriptDataType &p_type) override;
 	virtual void pop_temporary() override;
+	virtual void clean_temporaries() override;
 
 	virtual void start_parameters() override;
 	virtual void end_parameters() override;
@@ -499,6 +499,8 @@ public:
 	virtual void write_get_named(const Address &p_target, const StringName &p_name, const Address &p_source) override;
 	virtual void write_set_member(const Address &p_value, const StringName &p_name) override;
 	virtual void write_get_member(const Address &p_target, const StringName &p_name) override;
+	virtual void write_set_static_variable(const Address &p_value, const Address &p_class, int p_index) override;
+	virtual void write_get_static_variable(const Address &p_target, const Address &p_class, int p_index) override;
 	virtual void write_assign(const Address &p_target, const Address &p_source) override;
 	virtual void write_assign_with_conversion(const Address &p_target, const Address &p_source) override;
 	virtual void write_assign_true(const Address &p_target) override;
@@ -533,8 +535,8 @@ public:
 	virtual void write_jump_if_shared(const Address &p_value) override;
 	virtual void write_end_jump_if_shared() override;
 	virtual void start_for(const GDScriptDataType &p_iterator_type, const GDScriptDataType &p_list_type) override;
-	virtual void write_for_assignment(const Address &p_variable, const Address &p_list) override;
-	virtual void write_for() override;
+	virtual void write_for_assignment(const Address &p_list) override;
+	virtual void write_for(const Address &p_variable, bool p_use_conversion) override;
 	virtual void write_endfor() override;
 	virtual void start_while_condition() override;
 	virtual void write_while(const Address &p_condition) override;

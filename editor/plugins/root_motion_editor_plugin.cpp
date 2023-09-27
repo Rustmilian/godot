@@ -32,6 +32,8 @@
 #include "editor/editor_node.h"
 #include "scene/animation/animation_player.h"
 #include "scene/animation/animation_tree.h"
+#include "scene/gui/button.h"
+#include "scene/gui/dialogs.h"
 #include "scene/gui/tree.h"
 #include "scene/main/window.h"
 
@@ -130,7 +132,7 @@ void EditorPropertyRootMotion::_node_assign() {
 		if (skeleton) {
 			HashMap<int, TreeItem *> items;
 			items.insert(-1, ti);
-			Ref<Texture> bone_icon = get_theme_icon(SNAME("BoneAttachment3D"), SNAME("EditorIcons"));
+			Ref<Texture> bone_icon = get_editor_theme_icon(SNAME("BoneAttachment3D"));
 			Vector<int> bones_to_process = skeleton->get_parentless_bones();
 			while (bones_to_process.size() > 0) {
 				int current_bone_idx = bones_to_process[0];
@@ -167,7 +169,7 @@ void EditorPropertyRootMotion::_node_clear() {
 }
 
 void EditorPropertyRootMotion::update_property() {
-	NodePath p = get_edited_object()->get(get_edited_property());
+	NodePath p = get_edited_property_value();
 	assign->set_tooltip_text(p);
 	if (p == NodePath()) {
 		assign->set_icon(Ref<Texture2D>());
@@ -188,7 +190,7 @@ void EditorPropertyRootMotion::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE:
 		case NOTIFICATION_THEME_CHANGED: {
-			Ref<Texture2D> t = get_theme_icon(SNAME("Clear"), SNAME("EditorIcons"));
+			Ref<Texture2D> t = get_editor_theme_icon(SNAME("Clear"));
 			clear->set_icon(t);
 		} break;
 	}

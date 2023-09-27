@@ -76,6 +76,7 @@ void LightStorage::_light_initialize(RID p_light, RS::LightType p_type) {
 	light.param[RS::LIGHT_PARAM_SHADOW_BLUR] = 0;
 	light.param[RS::LIGHT_PARAM_SHADOW_PANCAKE_SIZE] = 20.0;
 	light.param[RS::LIGHT_PARAM_TRANSMITTANCE_BIAS] = 0.05;
+	light.param[RS::LIGHT_PARAM_INTENSITY] = p_type == RS::LIGHT_DIRECTIONAL ? 100000.0 : 1000.0;
 
 	light_owner.initialize_rid(p_light, light);
 }
@@ -115,14 +116,14 @@ void LightStorage::light_free(RID p_rid) {
 
 void LightStorage::light_set_color(RID p_light, const Color &p_color) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->color = p_color;
 }
 
 void LightStorage::light_set_param(RID p_light, RS::LightParam p_param, float p_value) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 	ERR_FAIL_INDEX(p_param, RS::LIGHT_PARAM_MAX);
 
 	if (light->param[p_param] == p_value) {
@@ -157,7 +158,7 @@ void LightStorage::light_set_param(RID p_light, RS::LightParam p_param, float p_
 
 void LightStorage::light_set_shadow(RID p_light, bool p_enabled) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 	light->shadow = p_enabled;
 
 	light->version++;
@@ -167,7 +168,7 @@ void LightStorage::light_set_shadow(RID p_light, bool p_enabled) {
 void LightStorage::light_set_projector(RID p_light, RID p_texture) {
 	GLES3::TextureStorage *texture_storage = GLES3::TextureStorage::get_singleton();
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	if (light->projector == p_texture) {
 		return;
@@ -189,14 +190,14 @@ void LightStorage::light_set_projector(RID p_light, RID p_texture) {
 
 void LightStorage::light_set_negative(RID p_light, bool p_enable) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->negative = p_enable;
 }
 
 void LightStorage::light_set_cull_mask(RID p_light, uint32_t p_mask) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->cull_mask = p_mask;
 
@@ -206,7 +207,7 @@ void LightStorage::light_set_cull_mask(RID p_light, uint32_t p_mask) {
 
 void LightStorage::light_set_distance_fade(RID p_light, bool p_enabled, float p_begin, float p_shadow, float p_length) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->distance_fade = p_enabled;
 	light->distance_fade_begin = p_begin;
@@ -216,7 +217,7 @@ void LightStorage::light_set_distance_fade(RID p_light, bool p_enabled, float p_
 
 void LightStorage::light_set_reverse_cull_face_mode(RID p_light, bool p_enabled) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->reverse_cull = p_enabled;
 
@@ -226,7 +227,7 @@ void LightStorage::light_set_reverse_cull_face_mode(RID p_light, bool p_enabled)
 
 void LightStorage::light_set_bake_mode(RID p_light, RS::LightBakeMode p_bake_mode) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->bake_mode = p_bake_mode;
 
@@ -236,7 +237,7 @@ void LightStorage::light_set_bake_mode(RID p_light, RS::LightBakeMode p_bake_mod
 
 void LightStorage::light_omni_set_shadow_mode(RID p_light, RS::LightOmniShadowMode p_mode) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->omni_shadow_mode = p_mode;
 
@@ -246,14 +247,14 @@ void LightStorage::light_omni_set_shadow_mode(RID p_light, RS::LightOmniShadowMo
 
 RS::LightOmniShadowMode LightStorage::light_omni_get_shadow_mode(RID p_light) {
 	const Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND_V(!light, RS::LIGHT_OMNI_SHADOW_CUBE);
+	ERR_FAIL_NULL_V(light, RS::LIGHT_OMNI_SHADOW_CUBE);
 
 	return light->omni_shadow_mode;
 }
 
 void LightStorage::light_directional_set_shadow_mode(RID p_light, RS::LightDirectionalShadowMode p_mode) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->directional_shadow_mode = p_mode;
 	light->version++;
@@ -262,7 +263,7 @@ void LightStorage::light_directional_set_shadow_mode(RID p_light, RS::LightDirec
 
 void LightStorage::light_directional_set_blend_splits(RID p_light, bool p_enable) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->directional_blend_splits = p_enable;
 	light->version++;
@@ -271,56 +272,56 @@ void LightStorage::light_directional_set_blend_splits(RID p_light, bool p_enable
 
 bool LightStorage::light_directional_get_blend_splits(RID p_light) const {
 	const Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND_V(!light, false);
+	ERR_FAIL_NULL_V(light, false);
 
 	return light->directional_blend_splits;
 }
 
 void LightStorage::light_directional_set_sky_mode(RID p_light, RS::LightDirectionalSkyMode p_mode) {
 	Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND(!light);
+	ERR_FAIL_NULL(light);
 
 	light->directional_sky_mode = p_mode;
 }
 
 RS::LightDirectionalSkyMode LightStorage::light_directional_get_sky_mode(RID p_light) const {
 	const Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND_V(!light, RS::LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_AND_SKY);
+	ERR_FAIL_NULL_V(light, RS::LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_AND_SKY);
 
 	return light->directional_sky_mode;
 }
 
 RS::LightDirectionalShadowMode LightStorage::light_directional_get_shadow_mode(RID p_light) {
 	const Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND_V(!light, RS::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL);
+	ERR_FAIL_NULL_V(light, RS::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL);
 
 	return light->directional_shadow_mode;
 }
 
 RS::LightBakeMode LightStorage::light_get_bake_mode(RID p_light) {
 	const Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND_V(!light, RS::LIGHT_BAKE_DISABLED);
+	ERR_FAIL_NULL_V(light, RS::LIGHT_BAKE_DISABLED);
 
 	return light->bake_mode;
 }
 
 uint64_t LightStorage::light_get_version(RID p_light) const {
 	const Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND_V(!light, 0);
+	ERR_FAIL_NULL_V(light, 0);
 
 	return light->version;
 }
 
 uint32_t LightStorage::light_get_cull_mask(RID p_light) const {
 	const Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND_V(!light, 0);
+	ERR_FAIL_NULL_V(light, 0);
 
 	return light->cull_mask;
 }
 
 AABB LightStorage::light_get_aabb(RID p_light) const {
 	const Light *light = light_owner.get_or_null(p_light);
-	ERR_FAIL_COND_V(!light, AABB());
+	ERR_FAIL_NULL_V(light, AABB());
 
 	switch (light->type) {
 		case RS::LIGHT_SPOT: {
@@ -356,20 +357,20 @@ RID LightStorage::light_instance_create(RID p_light) {
 
 void LightStorage::light_instance_free(RID p_light_instance) {
 	LightInstance *light_instance = light_instance_owner.get_or_null(p_light_instance);
-	ERR_FAIL_COND(!light_instance);
+	ERR_FAIL_NULL(light_instance);
 	light_instance_owner.free(p_light_instance);
 }
 
 void LightStorage::light_instance_set_transform(RID p_light_instance, const Transform3D &p_transform) {
 	LightInstance *light_instance = light_instance_owner.get_or_null(p_light_instance);
-	ERR_FAIL_COND(!light_instance);
+	ERR_FAIL_NULL(light_instance);
 
 	light_instance->transform = p_transform;
 }
 
 void LightStorage::light_instance_set_aabb(RID p_light_instance, const AABB &p_aabb) {
 	LightInstance *light_instance = light_instance_owner.get_or_null(p_light_instance);
-	ERR_FAIL_COND(!light_instance);
+	ERR_FAIL_NULL(light_instance);
 
 	light_instance->aabb = p_aabb;
 }
@@ -593,106 +594,6 @@ void LightStorage::lightmap_instance_free(RID p_lightmap) {
 
 void LightStorage::lightmap_instance_set_transform(RID p_lightmap, const Transform3D &p_transform) {
 }
-
-/* LIGHT SHADOW MAPPING */
-/*
-
-RID LightStorage::canvas_light_occluder_create() {
-	CanvasOccluder *co = memnew(CanvasOccluder);
-	co->index_id = 0;
-	co->vertex_id = 0;
-	co->len = 0;
-
-	return canvas_occluder_owner.make_rid(co);
-}
-
-void LightStorage::canvas_light_occluder_set_polylines(RID p_occluder, const PoolVector<Vector2> &p_lines) {
-	CanvasOccluder *co = canvas_occluder_owner.get(p_occluder);
-	ERR_FAIL_COND(!co);
-
-	co->lines = p_lines;
-
-	if (p_lines.size() != co->len) {
-		if (co->index_id) {
-			glDeleteBuffers(1, &co->index_id);
-		} if (co->vertex_id) {
-			glDeleteBuffers(1, &co->vertex_id);
-		}
-
-		co->index_id = 0;
-		co->vertex_id = 0;
-		co->len = 0;
-	}
-
-	if (p_lines.size()) {
-		PoolVector<float> geometry;
-		PoolVector<uint16_t> indices;
-		int lc = p_lines.size();
-
-		geometry.resize(lc * 6);
-		indices.resize(lc * 3);
-
-		PoolVector<float>::Write vw = geometry.write();
-		PoolVector<uint16_t>::Write iw = indices.write();
-
-		PoolVector<Vector2>::Read lr = p_lines.read();
-
-		const int POLY_HEIGHT = 16384;
-
-		for (int i = 0; i < lc / 2; i++) {
-			vw[i * 12 + 0] = lr[i * 2 + 0].x;
-			vw[i * 12 + 1] = lr[i * 2 + 0].y;
-			vw[i * 12 + 2] = POLY_HEIGHT;
-
-			vw[i * 12 + 3] = lr[i * 2 + 1].x;
-			vw[i * 12 + 4] = lr[i * 2 + 1].y;
-			vw[i * 12 + 5] = POLY_HEIGHT;
-
-			vw[i * 12 + 6] = lr[i * 2 + 1].x;
-			vw[i * 12 + 7] = lr[i * 2 + 1].y;
-			vw[i * 12 + 8] = -POLY_HEIGHT;
-
-			vw[i * 12 + 9] = lr[i * 2 + 0].x;
-			vw[i * 12 + 10] = lr[i * 2 + 0].y;
-			vw[i * 12 + 11] = -POLY_HEIGHT;
-
-			iw[i * 6 + 0] = i * 4 + 0;
-			iw[i * 6 + 1] = i * 4 + 1;
-			iw[i * 6 + 2] = i * 4 + 2;
-
-			iw[i * 6 + 3] = i * 4 + 2;
-			iw[i * 6 + 4] = i * 4 + 3;
-			iw[i * 6 + 5] = i * 4 + 0;
-		}
-
-		//if same buffer len is being set, just use BufferSubData to avoid a pipeline flush
-
-		if (!co->vertex_id) {
-			glGenBuffers(1, &co->vertex_id);
-			glBindBuffer(GL_ARRAY_BUFFER, co->vertex_id);
-			glBufferData(GL_ARRAY_BUFFER, lc * 6 * sizeof(real_t), vw.ptr(), GL_STATIC_DRAW);
-		} else {
-			glBindBuffer(GL_ARRAY_BUFFER, co->vertex_id);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, lc * 6 * sizeof(real_t), vw.ptr());
-		}
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
-
-		if (!co->index_id) {
-			glGenBuffers(1, &co->index_id);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, co->index_id);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, lc * 3 * sizeof(uint16_t), iw.ptr(), GL_DYNAMIC_DRAW);
-		} else {
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, co->index_id);
-			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, lc * 3 * sizeof(uint16_t), iw.ptr());
-		}
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); //unbind
-
-		co->len = lc;
-	}
-}
-*/
 
 /* SHADOW ATLAS API */
 

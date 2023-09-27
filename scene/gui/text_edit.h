@@ -172,6 +172,7 @@ private:
 
 		String language;
 		TextServer::Direction direction = TextServer::DIRECTION_AUTO;
+		BitField<TextServer::LineBreakFlag> brk_flags = TextServer::BREAK_MANDATORY;
 		bool draw_control_chars = false;
 
 		int line_height = -1;
@@ -198,6 +199,8 @@ private:
 
 		void set_width(float p_width);
 		float get_width() const;
+		void set_brk_flags(BitField<TextServer::LineBreakFlag> p_flags);
+		BitField<TextServer::LineBreakFlag> get_brk_flags() const;
 		int get_line_wrap_amount(int p_line) const;
 
 		Vector<Vector2i> get_line_wrap_ranges(int p_line) const;
@@ -413,13 +416,14 @@ private:
 	CaretType caret_type = CaretType::CARET_TYPE_LINE;
 
 	bool draw_caret = true;
+	bool draw_caret_when_editable_disabled = false;
 
 	bool caret_blink_enabled = false;
 	Timer *caret_blink_timer = nullptr;
 
 	bool move_caret_on_right_click = true;
 
-	bool caret_mid_grapheme_enabled = true;
+	bool caret_mid_grapheme_enabled = false;
 
 	bool multi_carets_enabled = true;
 
@@ -459,6 +463,7 @@ private:
 
 	/* Line wrapping. */
 	LineWrappingMode line_wrapping_mode = LineWrappingMode::LINE_WRAPPING_NONE;
+	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_WORD_SMART;
 
 	int wrap_at_column = 0;
 	int wrap_right_offset = 10;
@@ -537,11 +542,6 @@ private:
 	/* Visual. */
 	struct ThemeCache {
 		float base_scale = 1.0;
-
-		/* Internal API for CodeEdit */
-		Color brace_mismatch_color;
-		Color code_folding_color = Color(1, 1, 1);
-		Ref<Texture2D> folded_eol_icon;
 
 		/* Search */
 		Color search_result_color = Color(1, 1, 1);
@@ -627,7 +627,7 @@ protected:
 	virtual void _update_theme_item_cache() override;
 
 	/* Internal API for CodeEdit, pending public API. */
-	// brace matching
+	// Brace matching.
 	struct BraceMatchingData {
 		int open_match_line = -1;
 		int open_match_column = -1;
@@ -655,6 +655,11 @@ protected:
 	// Symbol lookup.
 	String lookup_symbol_word;
 	void _set_symbol_lookup_word(const String &p_symbol);
+
+	// Theme items.
+	virtual Color _get_brace_mismatch_color() const { return Color(); };
+	virtual Color _get_code_folding_color() const { return Color(); };
+	virtual Ref<Texture2D> _get_folded_eol_icon() const { return Ref<Texture2D>(); };
 
 	/* Text manipulation */
 
@@ -821,6 +826,9 @@ public:
 	void set_caret_blink_interval(const float p_interval);
 	float get_caret_blink_interval() const;
 
+	void set_draw_caret_when_editable_disabled(bool p_enable);
+	bool is_drawing_caret_when_editable_disabled() const;
+
 	void set_move_caret_on_right_click_enabled(const bool p_enabled);
 	bool is_move_caret_on_right_click_enabled() const;
 
@@ -889,6 +897,9 @@ public:
 	/* Line wrapping. */
 	void set_line_wrapping_mode(LineWrappingMode p_wrapping_mode);
 	LineWrappingMode get_line_wrapping_mode() const;
+
+	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode() const;
 
 	bool is_line_wrapped(int p_line) const;
 	int get_line_wrap_count(int p_line) const;
@@ -1015,6 +1026,8 @@ public:
 
 	void set_draw_spaces(bool p_enabled);
 	bool is_drawing_spaces() const;
+
+	Color get_font_color() const;
 
 	TextEdit(const String &p_placeholder = String());
 };

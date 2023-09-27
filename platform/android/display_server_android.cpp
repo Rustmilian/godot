@@ -30,19 +30,23 @@
 
 #include "display_server_android.h"
 
-#include "core/config/project_settings.h"
 #include "java_godot_io_wrapper.h"
 #include "java_godot_wrapper.h"
 #include "os_android.h"
 #include "tts_android.h"
 
+#include "core/config/project_settings.h"
+
 #if defined(VULKAN_ENABLED)
+#include "vulkan_context_android.h"
+
 #include "drivers/vulkan/rendering_device_vulkan.h"
-#include "platform/android/vulkan/vulkan_context_android.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #endif
+
 #ifdef GLES3_ENABLED
 #include "drivers/gles3/rasterizer_gles3.h"
+
 #include <EGL/egl.h>
 #endif
 
@@ -105,6 +109,20 @@ void DisplayServerAndroid::tts_resume() {
 
 void DisplayServerAndroid::tts_stop() {
 	TTS_Android::stop();
+}
+
+bool DisplayServerAndroid::is_dark_mode_supported() const {
+	GodotJavaWrapper *godot_java = OS_Android::get_singleton()->get_godot_java();
+	ERR_FAIL_NULL_V(godot_java, false);
+
+	return godot_java->is_dark_mode_supported();
+}
+
+bool DisplayServerAndroid::is_dark_mode() const {
+	GodotJavaWrapper *godot_java = OS_Android::get_singleton()->get_godot_java();
+	ERR_FAIL_NULL_V(godot_java, false);
+
+	return godot_java->is_dark_mode();
 }
 
 void DisplayServerAndroid::clipboard_set(const String &p_text) {
@@ -449,6 +467,10 @@ void DisplayServerAndroid::window_move_to_foreground(DisplayServer::WindowID p_w
 	// Not supported on Android.
 }
 
+bool DisplayServerAndroid::window_is_focused(WindowID p_window) const {
+	return true;
+}
+
 bool DisplayServerAndroid::window_can_draw(DisplayServer::WindowID p_window) const {
 	return true;
 }
@@ -535,7 +557,7 @@ DisplayServerAndroid::DisplayServerAndroid(const String &p_rendering_driver, Dis
 
 #if defined(GLES3_ENABLED)
 	if (rendering_driver == "opengl3") {
-		RasterizerGLES3::make_current();
+		RasterizerGLES3::make_current(false);
 	}
 #endif
 

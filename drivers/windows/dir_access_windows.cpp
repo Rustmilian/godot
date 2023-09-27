@@ -40,24 +40,19 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-/*
-
-[03:57] <reduz> yessopie, so i don't havemak to rely on unicows
-[03:58] <yessopie> reduz- yeah, all of the functions fail, and then you can call GetLastError () which will return 120
-[03:58] <drumstick> CategoryApl, hehe, what? :)
-[03:59] <CategoryApl> didn't Verona lead to some trouble
-[03:59] <yessopie> 120 = ERROR_CALL_NOT_IMPLEMENTED
-[03:59] <yessopie> (you can use that constant if you include winerr.h)
-[03:59] <CategoryApl> well answer with winning a compo
-
-[04:02] <yessopie> if ( SetCurrentDirectoryW ( L"." ) == FALSE && GetLastError () == ERROR_CALL_NOT_IMPLEMENTED ) { use ANSI }
-*/
-
 struct DirAccessWindowsPrivate {
-	HANDLE h; //handle for findfirstfile
+	HANDLE h; // handle for FindFirstFile.
 	WIN32_FIND_DATA f;
-	WIN32_FIND_DATAW fu; //unicode version
+	WIN32_FIND_DATAW fu; // Unicode version.
 };
+
+String DirAccessWindows::fix_path(String p_path) const {
+	String r_path = DirAccess::fix_path(p_path);
+	if (r_path.is_absolute_path() && !r_path.is_network_share_path() && r_path.length() > MAX_PATH) {
+		r_path = "\\\\?\\" + r_path.replace("/", "\\");
+	}
+	return r_path;
+}
 
 // CreateFolderAsync
 
@@ -158,18 +153,13 @@ Error DirAccessWindows::make_dir(String p_dir) {
 	p_dir = fix_path(p_dir);
 	if (p_dir.is_relative_path()) {
 		p_dir = current_dir.path_join(p_dir);
+		p_dir = fix_path(p_dir);
 	}
 
 	p_dir = p_dir.simplify_path().replace("/", "\\");
 
 	bool success;
 	int err;
-
-	if (!p_dir.is_network_share_path()) {
-		p_dir = "\\\\?\\" + p_dir;
-		// Add "\\?\" to the path to extend max. path length past 248, if it's not a network share UNC path.
-		// See https://msdn.microsoft.com/en-us/library/windows/desktop/aa363855(v=vs.85).aspx
-	}
 
 	success = CreateDirectoryW((LPCWSTR)(p_dir.utf16().get_data()), nullptr);
 	err = GetLastError();
@@ -355,12 +345,6 @@ DirAccessWindows::DirAccessWindows() {
 	p->h = INVALID_HANDLE_VALUE;
 	current_dir = ".";
 
-#ifdef UWP_ENABLED
-	Windows::Storage::StorageFolder ^ install_folder = Windows::ApplicationModel::Package::Current->InstalledLocation;
-	change_dir(install_folder->Path->Data());
-
-#else
-
 	DWORD mask = GetLogicalDrives();
 
 	for (int i = 0; i < MAX_DRIVES; i++) {
@@ -372,7 +356,6 @@ DirAccessWindows::DirAccessWindows() {
 	}
 
 	change_dir(".");
-#endif
 }
 
 DirAccessWindows::~DirAccessWindows() {
@@ -381,4 +364,4 @@ DirAccessWindows::~DirAccessWindows() {
 	memdelete(p);
 }
 
-#endif //windows DirAccess support
+#endif // WINDOWS_ENABLED

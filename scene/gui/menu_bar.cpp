@@ -32,6 +32,7 @@
 
 #include "core/os/keyboard.h"
 #include "scene/main/window.h"
+#include "scene/theme/theme_db.h"
 
 void MenuBar::gui_input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(p_event.is_null());
@@ -131,7 +132,6 @@ void MenuBar::_open_popup(int p_index, bool p_focus_item) {
 		screen_pos.x += screen_size.x - pm->get_size().width;
 	}
 	pm->set_position(screen_pos);
-	pm->set_parent_rect(Rect2(Point2(screen_pos - pm->get_position()), Size2(screen_size.x, screen_pos.y)));
 	pm->popup();
 
 	if (p_focus_item) {
@@ -153,7 +153,7 @@ void MenuBar::shortcut_input(const Ref<InputEvent> &p_event) {
 		return;
 	}
 
-	if (p_event->is_pressed() && !p_event->is_echo() && (Object::cast_to<InputEventKey>(p_event.ptr()) || Object::cast_to<InputEventJoypadButton>(p_event.ptr()) || Object::cast_to<InputEventAction>(*p_event) || Object::cast_to<InputEventShortcut>(*p_event))) {
+	if (p_event->is_pressed() && (Object::cast_to<InputEventKey>(p_event.ptr()) || Object::cast_to<InputEventJoypadButton>(p_event.ptr()) || Object::cast_to<InputEventAction>(*p_event) || Object::cast_to<InputEventShortcut>(*p_event))) {
 		if (!get_parent() || !is_visible_in_tree()) {
 			return;
 		}
@@ -209,10 +209,10 @@ void MenuBar::_update_submenu(const String &p_menu_name, PopupMenu *p_child) {
 		if (p_child->is_item_separator(i)) {
 			DisplayServer::get_singleton()->global_menu_add_separator(p_menu_name);
 		} else if (!p_child->get_item_submenu(i).is_empty()) {
-			Node *n = p_child->get_node(p_child->get_item_submenu(i));
-			ERR_FAIL_COND_MSG(!n, "Item subnode does not exist: " + p_child->get_item_submenu(i) + ".");
+			Node *n = p_child->get_node_or_null(p_child->get_item_submenu(i));
+			ERR_FAIL_NULL_MSG(n, "Item subnode does not exist: '" + p_child->get_item_submenu(i) + "'.");
 			PopupMenu *pm = Object::cast_to<PopupMenu>(n);
-			ERR_FAIL_COND_MSG(!pm, "Item subnode is not a PopupMenu: " + p_child->get_item_submenu(i) + ".");
+			ERR_FAIL_NULL_MSG(pm, "Item subnode is not a PopupMenu: '" + p_child->get_item_submenu(i) + "'.");
 
 			DisplayServer::get_singleton()->global_menu_add_submenu_item(p_menu_name, atr(p_child->get_item_text(i)), p_menu_name + "/" + itos(i));
 			_update_submenu(p_menu_name + "/" + itos(i), pm);
@@ -306,35 +306,6 @@ void MenuBar::_update_menu() {
 	queue_redraw();
 }
 
-void MenuBar::_update_theme_item_cache() {
-	Control::_update_theme_item_cache();
-
-	theme_cache.normal = get_theme_stylebox(SNAME("normal"));
-	theme_cache.normal_mirrored = get_theme_stylebox(SNAME("normal_mirrored"));
-	theme_cache.disabled = get_theme_stylebox(SNAME("disabled"));
-	theme_cache.disabled_mirrored = get_theme_stylebox(SNAME("disabled_mirrored"));
-	theme_cache.pressed = get_theme_stylebox(SNAME("pressed"));
-	theme_cache.pressed_mirrored = get_theme_stylebox(SNAME("pressed_mirrored"));
-	theme_cache.hover = get_theme_stylebox(SNAME("hover"));
-	theme_cache.hover_mirrored = get_theme_stylebox(SNAME("hover_mirrored"));
-	theme_cache.hover_pressed = get_theme_stylebox(SNAME("hover_pressed"));
-	theme_cache.hover_pressed_mirrored = get_theme_stylebox(SNAME("hover_pressed_mirrored"));
-
-	theme_cache.font = get_theme_font(SNAME("font"));
-	theme_cache.font_size = get_theme_font_size(SNAME("font_size"));
-	theme_cache.outline_size = get_theme_constant(SNAME("outline_size"));
-	theme_cache.font_outline_color = get_theme_color(SNAME("font_outline_color"));
-
-	theme_cache.font_color = get_theme_color(SNAME("font_color"));
-	theme_cache.font_disabled_color = get_theme_color(SNAME("font_disabled_color"));
-	theme_cache.font_pressed_color = get_theme_color(SNAME("font_pressed_color"));
-	theme_cache.font_hover_color = get_theme_color(SNAME("font_hover_color"));
-	theme_cache.font_hover_pressed_color = get_theme_color(SNAME("font_hover_pressed_color"));
-	theme_cache.font_focus_color = get_theme_color(SNAME("font_focus_color"));
-
-	theme_cache.h_separation = get_theme_constant(SNAME("h_separation"));
-}
-
 void MenuBar::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
@@ -399,13 +370,18 @@ void MenuBar::_notification(int p_what) {
 int MenuBar::_get_index_at_point(const Point2 &p_point) const {
 	Ref<StyleBox> style = theme_cache.normal;
 	int offset = 0;
+	Point2 point = p_point;
+	if (is_layout_rtl()) {
+		point.x = get_size().x - point.x;
+	}
+
 	for (int i = 0; i < menu_cache.size(); i++) {
 		if (menu_cache[i].hidden) {
 			continue;
 		}
 		Size2 size = menu_cache[i].text_buf->get_size() + style->get_minimum_size();
-		if (p_point.x > offset && p_point.x < offset + size.x) {
-			if (p_point.y > 0 && p_point.y < size.y) {
+		if (point.x > offset && point.x < offset + size.x) {
+			if (point.y > 0 && point.y < size.y) {
 				return i;
 			}
 		}
@@ -428,7 +404,12 @@ Rect2 MenuBar::_get_menu_item_rect(int p_index) const {
 		offset += size.x + theme_cache.h_separation;
 	}
 
-	return Rect2(Point2(offset, 0), menu_cache[p_index].text_buf->get_size() + style->get_minimum_size());
+	Size2 size = menu_cache[p_index].text_buf->get_size() + style->get_minimum_size();
+	if (is_layout_rtl()) {
+		return Rect2(Point2(get_size().x - offset - size.x, 0), size);
+	} else {
+		return Rect2(Point2(offset, 0), size);
+	}
 }
 
 void MenuBar::_draw_menu_item(int p_index) {
@@ -444,7 +425,7 @@ void MenuBar::_draw_menu_item(int p_index) {
 	}
 
 	Color color;
-	Ref<StyleBox> style = theme_cache.normal;
+	Ref<StyleBox> style;
 	Rect2 item_rect = _get_menu_item_rect(p_index);
 
 	if (menu_cache[p_index].disabled) {
@@ -675,6 +656,31 @@ void MenuBar::_bind_methods() {
 	ADD_GROUP("BiDi", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "text_direction", PROPERTY_HINT_ENUM, "Auto,Left-to-Right,Right-to-Left,Inherited"), "set_text_direction", "get_text_direction");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "language", PROPERTY_HINT_LOCALE_ID, ""), "set_language", "get_language");
+
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, normal);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, normal_mirrored);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, disabled);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, disabled_mirrored);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, pressed);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, pressed_mirrored);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, hover);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, hover_mirrored);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, hover_pressed);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_STYLEBOX, MenuBar, hover_pressed_mirrored);
+
+	BIND_THEME_ITEM(Theme::DATA_TYPE_FONT, MenuBar, font);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_FONT_SIZE, MenuBar, font_size);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, MenuBar, outline_size);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, MenuBar, font_outline_color);
+
+	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, MenuBar, font_color);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, MenuBar, font_disabled_color);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, MenuBar, font_pressed_color);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, MenuBar, font_hover_color);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, MenuBar, font_hover_pressed_color);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, MenuBar, font_focus_color);
+
+	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, MenuBar, h_separation);
 }
 
 void MenuBar::set_switch_on_hover(bool p_enabled) {

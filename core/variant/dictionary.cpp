@@ -83,9 +83,16 @@ Variant &Dictionary::operator[](const Variant &p_key) {
 	if (unlikely(_p->read_only)) {
 		if (p_key.get_type() == Variant::STRING_NAME) {
 			const StringName *sn = VariantInternal::get_string_name(&p_key);
-			*_p->read_only = _p->variant_map[sn->operator String()];
-		} else {
+			const String &key = sn->operator String();
+			if (likely(_p->variant_map.has(key))) {
+				*_p->read_only = _p->variant_map[key];
+			} else {
+				*_p->read_only = Variant();
+			}
+		} else if (likely(_p->variant_map.has(p_key))) {
 			*_p->read_only = _p->variant_map[p_key];
+		} else {
+			*_p->read_only = Variant();
 		}
 
 		return *_p->read_only;
@@ -241,7 +248,7 @@ void Dictionary::merge(const Dictionary &p_dictionary, bool p_overwrite) {
 }
 
 void Dictionary::_unref() const {
-	ERR_FAIL_COND(!_p);
+	ERR_FAIL_NULL(_p);
 	if (_p->refcount.unref()) {
 		if (_p->read_only) {
 			memdelete(_p->read_only);
